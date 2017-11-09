@@ -2,16 +2,36 @@ class pam::params {
   $etcpamd     = '/etc/pam.d'
   $sss_enabled = true
   case $facts['os']['family'] {
+    'Suse': {
+      $services_sss = {
+        common-account-pc_test => [
+          {
+            type    => 'account',
+            module  => 'localuser',
+            control => 'sufficient',
+            order   => 50,
+          },
+          {
+            type    => 'account',
+            module  => 'sss',
+            control => 'required',
+            order   => 60,
+          }
+        ]
+      }
+      $services = {
+        common-account-pc_test => [
+          {
+            type    => 'account',
+            module  => 'unix',
+            control => 'requisite',
+            order   => 10,
+          }
+        ]
+      }      
+    }
     'Debian': {
-      $service_names = [
-        'common-account_test',
-        'common-auth_test',
-        'common-password_test',
-        'common-session_test',
-        'common-session-noninteractive_test',
-      ]
-
-      $sss = {
+      $services_sss = {
         common-account_test => [
           {
             type    => 'account',
@@ -33,8 +53,7 @@ class pam::params {
           }
         ]
       }
-
-      $default = {
+      $services = {
         common-account_test => [
           {
             type    => 'account',
@@ -54,24 +73,12 @@ class pam::params {
             control => 'required',
             order   => 30,
           },
-
         ]
-      }
-      if $sss_enabled {
-        $default.each |$k,$v| {
-          notify { "$k": }
-          notify { "$v": }
-          concat($v,$sss[$k])
-        }
-
-      
-        #$services = deep_merge($default, $sss)
-      } else {
-        $services = $default
-      }
-      
+      }      
     }
     default: {
+      $services = {}
+      $services_sss = {}
     }
   }
 }
